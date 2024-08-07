@@ -10,7 +10,7 @@
 #define Type "MQ-2"
 #define Voltage_Resolution 3.3
 #define ADC_Bit_Resolution 12
-#define Pin 34  // พอร์ต ADC ที่ใช้เชื่อมต่อกับ A0 ของ MQ2
+#define Pin 34
 #define RatioMQ2CleanAir 9.83
 
 const char* ssid = "YOUR_WIFI_SSID";
