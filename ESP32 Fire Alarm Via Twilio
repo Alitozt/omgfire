@@ -4,7 +4,6 @@
 #include <MQUnifiedsensor.h>
 #include <base64.h>
 
-// กำหนดพอร์ตที่เชื่อมต่อกับเซนเซอร์
 #define Board "ESP-32"
 #define Type "MQ-2"
 #define Voltage_Resolution 3.3
@@ -12,17 +11,15 @@
 #define Pin 34  // พอร์ต ADC ที่ใช้เชื่อมต่อกับ A0 ของ MQ2
 #define RatioMQ2CleanAir 9.83
 
-// ใส่ข้อมูล WiFi ของคุณ
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
 
-// ข้อมูลของ Twilio API
 const char* twilioAccountSid = "YOUR_TWILIO_SID";
 const char* twilioAuthToken = "YOUR_TWILIO_AUTH-TOKEN";
 const char* twilioNumber = "YOUR_TWILIO_NUMBER";
 const char* toNumber = "NUMBER_THAT_YOU_NEED_TO_CALL";
 const char* twimlUrl = "YOUR_TWIML_URL";
-// สร้างออบเจ็กต์เซนเซอร์
+
 MQUnifiedsensor MQ2(Board, Voltage_Resolution, ADC_Bit_Resolution, Pin, Type);
 
 void setup() {
@@ -40,7 +37,7 @@ void setup() {
   MQ2.setA(605.18); // ค่า A จากกราฟของ datasheet
   MQ2.setB(-3.937); // ค่า B จากกราฟของ datasheet
 
-  MQ2.init(); // เริ่มต้นการทำงานของเซนเซอร์
+  MQ2.init();
 
   Serial.print("Calibrating... ");
   float calcR0 = 0;
@@ -97,14 +94,14 @@ void makeCall() {
     
     if (httpResponseCode > 0) {
       String response = http.getString();
-      Serial.println("การโทรสำเร็จ: " + response);
+      Serial.println("Call Success : " + response);
     } else {
-      Serial.println("การโทรล้มเหลว. รหัสข้อผิดพลาด: " + String(httpResponseCode));
+      Serial.println("Call Fail. Error Code: " + String(httpResponseCode));
     }
     
     http.end();
   } else {
-    Serial.println("ไม่สามารถเชื่อมต่อ WiFi ได้");
+    Serial.println("Can’t connect to WIFI");
   }
 }
 
