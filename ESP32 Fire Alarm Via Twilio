@@ -35,9 +35,9 @@ void setup() {
 
   Serial.println("Connected to WiFi");
 
-  MQ2.setRegressionMethod(1); // กำหนดสมการแบบ exponential
-  MQ2.setA(605.18); // ค่า A จากกราฟของ datasheet
-  MQ2.setB(-3.937); // ค่า B จากกราฟของ datasheet
+  MQ2.setRegressionMethod(1);
+  MQ2.setA(605.18); 
+  MQ2.setB(-3.937); 
 
   MQ2.init();
 
