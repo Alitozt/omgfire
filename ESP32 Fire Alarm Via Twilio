@@ -1,3 +1,5 @@
+//By N.Alitz Co.ChatGPT
+
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <Wire.h>
