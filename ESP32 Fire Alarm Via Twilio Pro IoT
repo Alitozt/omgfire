@@ -20,7 +20,7 @@ const char* twilioAuthToken = "f876fb735117248f39d5a70b83997cec";
 const char* twilioNumber = "+16508440246";
 const char* toNumber = "+66923745900";
 const char* twimlUrl = "https://handler.twilio.com/twiml/EH83cbd41c7e8f181b321c05f5c4f616a6";
-
+///////////////////////////////////////Thing
 const char DEVICE_LOGIN_NAME[] = "30d69e95-eea5-4da4-ad59-a9c1d7b2bf86";
 const char SSID[] = "Alitz";    // Network SSID (name)
 const char PASS[] = "24015100"; // Network password (use for WPA, or use as key for WEP)
@@ -161,3 +161,4 @@ void initProperties() {
 void ReadSmoke() {
   smoke = MQ2.readSensor();
 }
+
