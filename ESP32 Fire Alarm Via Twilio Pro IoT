@@ -1,5 +1,4 @@
-
-
+//By N.Alitz Co.ChatGPT
 #include <ArduinoIoTCloud.h>
 #include <Arduino_ConnectionHandler.h>
 #include <WiFi.h>
@@ -13,41 +12,41 @@
 #define Type "MQ-2"
 #define Voltage_Resolution 3.3
 #define ADC_Bit_Resolution 12
-#define Pin 4
+#define Pin 34
 #define RatioMQ2CleanAir 9.83
 
-MQUnifiedsensor MQ2(Board, Voltage_Resolution, ADC_Bit_Resolution, Pin, Type);
-///////////////////////////////////////Thing
+const char* twilioAccountSid = "AC03f1b0ca4aaa021ef3167ef359aad4b4";
+const char* twilioAuthToken = "f876fb735117248f39d5a70b83997cec";
+const char* twilioNumber = "+16508440246";
+const char* toNumber = "+66923745900";
+const char* twimlUrl = "https://handler.twilio.com/twiml/EH83cbd41c7e8f181b321c05f5c4f616a6";
 
-const char DEVICE_LOGIN_NAME[] = "YOUR_DEVICE_LOGIN_NAME";
-const char SSID[] = "YOUR_WIFI_NAME";    // Network SSID (name)
-const char PASS[] = "YOUR_WIFI_PASS"; // Network password (use for WPA, or use as key for WEP)
-const char DEVICE_KEY[] = "YOUR_DEVICE_KEY"; // Secret device password
-
-const char* twilioAccountSid[] = "YOUR_TWILIO_SID";
-const char* twilioAuthToken[] = "YOUR_TWILIO_AUTH-TOKEN";
-const char* twilioNumber[] = "YOUR_TWILIO_NUMBER";
-const char* toNumber[] = "NUMBER_THAT_YOU_NEED_TO_CALL";
-const char* twimlUrl[] = "YOUR_TWIML_URL";
+const char DEVICE_LOGIN_NAME[] = "30d69e95-eea5-4da4-ad59-a9c1d7b2bf86";
+const char SSID[] = "Alitz";    // Network SSID (name)
+const char PASS[] = "24015100"; // Network password (use for WPA, or use as key for WEP)
+const char DEVICE_KEY[] = "r7enXrNFEpmuxQROByr!y4Gwb"; // Secret device password
 
 float smoke;
 
 WiFiConnectionHandler ArduinoIoTPreferredConnection(SSID, PASS);
 
+MQUnifiedsensor MQ2(Board, Voltage_Resolution, ADC_Bit_Resolution, Pin, Type);
+
 void setup() {
   Serial.begin(115200);
-  delay(1500);
-
   WiFi.begin(SSID, PASS);
+  
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi...");
   }
+
   Serial.println("Connected to WiFi");
 
   MQ2.setRegressionMethod(1);
   MQ2.setA(605.18); 
   MQ2.setB(-3.937); 
+
   MQ2.init();
 
   Serial.print("Calibrating... ");
@@ -60,9 +59,18 @@ void setup() {
   MQ2.setR0(calcR0 / 10);
   Serial.println(" done!");
 
+  if(isinf(calcR0)) {
+    Serial.println("Warning: Connection issue, R0 is infinite (Open circuit detected) please check your wiring and supply");
+    while(1);
+  }
+  if(calcR0 == 0) {
+    Serial.println("Warning: Connection issue, R0 is zero (Analog pin with short circuit to ground) please check your wiring and supply");
+    while(1);
+  }
+
   MQ2.serialDebug(true);
 
-  initProperties();
+   initProperties();
 
   ArduinoCloud.begin(ArduinoIoTPreferredConnection);
   setDebugMessageLevel(2);
@@ -72,17 +80,17 @@ void setup() {
 void loop() {
   ArduinoCloud.update();
   ReadSmoke();
-}
-
-void ReadSmoke() {
   MQ2.update();
-  smoke = MQ2.readSensor();
+  float smokePPM = MQ2.readSensor();
   Serial.print("Smoke: ");
-  Serial.println(smoke);
-  if (smoke > 100) {
+  Serial.print(smokePPM);
+  Serial.println(" ppm");
+
+  if (smokePPM > 100) {
     Serial.println("Smoke level is high! Making a call...");
     makeCall();
   }
+
   delay(1000);
 }
 
@@ -114,8 +122,6 @@ void makeCall() {
     Serial.println("Can’t connect to WIFI");
   }
 }
-
-
 
 String urlEncode(String str) {
   String encodedString = "";
@@ -150,4 +156,8 @@ void initProperties() {
   ArduinoCloud.setBoardId(DEVICE_LOGIN_NAME);
   ArduinoCloud.setSecretDeviceKey(DEVICE_KEY);
   ArduinoCloud.addProperty(smoke, READ, ON_CHANGE, NULL);
+}
+
+void ReadSmoke() {
+  smoke = MQ2.readSensor();
 }
