@@ -13,16 +13,16 @@
 #define Pin 34
 #define RatioMQ2CleanAir 9.83
 
-const char* twilioAccountSid = "AC03f1b0ca4aaa021ef3167ef359aad4b4";
-const char* twilioAuthToken = "f3116cdab982c5addaffa204632550e0";
-const char* twilioNumber = "+16508440246";
-const char* toNumber = "+66923745900";
-const char* twimlUrl = "https://handler.twilio.com/twiml/EH83cbd41c7e8f181b321c05f5c4f616a6";
+const char* twilioAccountSid = "YOUR_TWILIO_SID";
+const char* twilioAuthToken = "YOUR_TWILIO_AUTH-TOKEN";
+const char* twilioNumber = "YOUR_TWILIO_NUMBER";
+const char* toNumber = "NUMBER_THAT_YOU_NEED_TO_CALL";
+const char* twimlUrl = "YOUR_TWIML_URL";
 
-const char DEVICE_LOGIN_NAME[] = "30d69e95-eea5-4da4-ad59-a9c1d7b2bf86";
-const char SSID[] = "Alitz";
-const char PASS[] = "24015100";
-const char DEVICE_KEY[] = "r7enXrNFEpmuxQROByr!y4Gwb";
+const char DEVICE_LOGIN_NAME[] = "YOUR_ARDUINO_CLOUD_DEVICE_KEY";
+const char SSID[] = "YOUR_WIFI_SSID";
+const char PASS[] = "YOUR_WIFI_PASSWORD";
+const char DEVICE_KEY[] = "YOUR_ARDUINO_CLOUD_SECRET_KEY";
 
 float smoke;
 
