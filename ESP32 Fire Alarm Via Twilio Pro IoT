@@ -5,9 +5,7 @@
 #include <HTTPClient.h>
 #include <MQUnifiedsensor.h>
 #include <base64.h>
-#include <WiFiClient.h>
-#include <HttpClient.h>
-///////////////////////////////////////Thing
+
 #define Board "ESP-32"
 #define Type "MQ-2"
 #define Voltage_Resolution 3.3
@@ -16,15 +14,15 @@
 #define RatioMQ2CleanAir 9.83
 
 const char* twilioAccountSid = "AC03f1b0ca4aaa021ef3167ef359aad4b4";
-const char* twilioAuthToken = "f876fb735117248f39d5a70b83997cec";
+const char* twilioAuthToken = "f3116cdab982c5addaffa204632550e0";
 const char* twilioNumber = "+16508440246";
 const char* toNumber = "+66923745900";
 const char* twimlUrl = "https://handler.twilio.com/twiml/EH83cbd41c7e8f181b321c05f5c4f616a6";
-///////////////////////////////////////Thing
+
 const char DEVICE_LOGIN_NAME[] = "30d69e95-eea5-4da4-ad59-a9c1d7b2bf86";
-const char SSID[] = "Alitz";    // Network SSID (name)
-const char PASS[] = "24015100"; // Network password (use for WPA, or use as key for WEP)
-const char DEVICE_KEY[] = "r7enXrNFEpmuxQROByr!y4Gwb"; // Secret device password
+const char SSID[] = "Alitz";
+const char PASS[] = "24015100";
+const char DEVICE_KEY[] = "r7enXrNFEpmuxQROByr!y4Gwb";
 
 float smoke;
 
@@ -70,7 +68,7 @@ void setup() {
 
   MQ2.serialDebug(true);
 
-   initProperties();
+  initProperties();
 
   ArduinoCloud.begin(ArduinoIoTPreferredConnection);
   setDebugMessageLevel(2);
@@ -86,7 +84,8 @@ void loop() {
   Serial.print(smokePPM);
   Serial.println(" ppm");
 
-  if (smokePPM > 100) {
+
+  if (smokePPM > 200) {
     Serial.println("Smoke level is high! Making a call...");
     makeCall();
   }
@@ -96,30 +95,50 @@ void loop() {
 
 void makeCall() {
   if (WiFi.status() == WL_CONNECTED) {
-    WiFiClient wifi;
-    HttpClient http = HttpClient(wifi, "api.twilio.com", 443); // Use HttpClient class instead
+    WiFiClientSecure client;
+    client.setInsecure(); // Disable certificate verification
+
+    HttpClient http(client, "api.twilio.com", 443);
     
-    String url = "/2010-04-01/Accounts/" + String(twilioAccountSid) + "/Calls.json";
     String auth = base64::encode(String(twilioAccountSid) + ":" + String(twilioAuthToken));
+    String postData = "To=" + urlEncode(String(toNumber)) + "&From=" + urlEncode(String(twilioNumber)) + "&Url=" + urlEncode(String(twimlUrl));
+    
+    String path = "/2010-04-01/Accounts/" + String(twilioAccountSid) + "/Calls.json";
+
+    Serial.println("Making API call to Twilio...");
+    Serial.println("Path: " + path);
+    Serial.println("Auth (first 10 chars): " + auth.substring(0, 10) + "...");
+    Serial.println("PostData: " + postData);
+
     http.beginRequest();
-    http.post(url);
+    int err = http.post(path);
+    if (err != 0) {
+      Serial.println("connect error: " + String(err));
+      return;
+    }
+
     http.sendHeader("Authorization", "Basic " + auth);
     http.sendHeader("Content-Type", "application/x-www-form-urlencoded");
-    String postData = "To=" + urlEncode(toNumber) + "&From=" + urlEncode(twilioNumber) + "&Url=" + urlEncode(twimlUrl);
-    http.sendHeader("Content-Length", postData.length());
-    http.endRequest();
+    http.sendHeader("Content-Length", String(postData.length()));
+    http.beginBody();
     http.print(postData);
 
     int statusCode = http.responseStatusCode();
     String response = http.responseBody();
 
-    if (statusCode > 0) {
-      Serial.println("Call Success: " + response);
+    Serial.print("Status code: ");
+    Serial.println(statusCode);
+    Serial.print("Response: ");
+    Serial.println(response);
+
+    if (statusCode == 201) {
+      Serial.println("Call Success!");
     } else {
       Serial.println("Call Failed. Error Code: " + String(statusCode));
+      Serial.println("Error message: " + response);
     }
   } else {
-    Serial.println("Can’t connect to WIFI");
+    Serial.println("Can't connect to WiFi");
   }
 }
 
