@@ -1,4 +1,4 @@
-//By N.Alitz Co.ChatGPT
+//By ThinkPlus Co.ChatGPT+Claude
 
 #include <ArduinoIoTCloud.h>
 #include <Arduino_ConnectionHandler.h>
