@@ -1,3 +1,5 @@
+//By ThinkPlus Co.ChatGPT+Claude
+
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <HTTPClient.h>
