@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Say PUT_YOUR_TEXT_HERE </Say>
+  <Say language="th-TH" voice="Polly.Salli">PUT_YOUR_TEXT_HERE</Say>
+  <Hangup/>
 </Response>
