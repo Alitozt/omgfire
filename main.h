@@ -9,6 +9,7 @@
 #include <MQUnifiedsensor.h>
 #include <base64.h>
 #include "secrets.h" // <-- เพิ่มเข้ามาเพื่อดึงข้อมูลสำคัญจากไฟล์ secrets.h
+#include <stdio.h>
 
 //================================================================================
 // ส่วนของการตั้งค่าคงที่ (Constants)
@@ -29,6 +30,9 @@ const unsigned long LOOP_DELAY_MS = 5000; // หน่วงเวลา 5 ว�
 // ส่วนของการสร้าง Object และตัวแปร Global
 //================================================================================
 float smoke; // ตัวแปรสำหรับ Arduino Cloud
+
+// ใช้สำหรับตรวจสอบเวลาใน loop() เพื่อหลีกเลี่ยงการหน่วงแบบ blocking
+unsigned long lastSmokeUpdate = 0;
 
 WiFiConnectionHandler ArduinoIoTPreferredConnection(WIFI_SSID, WIFI_PASSWORD);
 MQUnifiedsensor MQ2(BOARD_TYPE, VOLTAGE_RESOLUTION, ADC_BIT_RESOLUTION, SENSOR_PIN, SENSOR_TYPE);
@@ -54,6 +58,12 @@ void setup() {
 void loop() {
   ArduinoCloud.update(); // สิ่งสำคัญที่สุด! ต้องเรียกใช้เสมอเพื่อให้เชื่อมต่อกับ Cloud
 
+  unsigned long currentMillis = millis();
+  if (currentMillis - lastSmokeUpdate < LOOP_DELAY_MS) {
+    return; // ยังไม่ถึงเวลาทำงานรอบใหม่
+  }
+  lastSmokeUpdate = currentMillis;
+
   // 1. อ่านค่าจากเซ็นเซอร์เพียงครั้งเดียวต่อรอบ
   MQ2.update();
   float currentSmokePPM = MQ2.readSensor();
@@ -71,9 +81,6 @@ void loop() {
     Serial.println("SMOKE DETECTED! Threshold exceeded. Triggering call...");
     triggerTwilioCall();
   }
-
-  // 4. หน่วงเวลาก่อนเริ่มรอบถัดไป
-  delay(LOOP_DELAY_MS);
 }
 
 //================================================================================
@@ -133,12 +140,14 @@ void setupArduinoCloud() {
 void sendToGoogleScript(float ppmValue) {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-    // สร้าง URL ให้ถูกต้อง โดยมีการส่งค่าเป็น parameter
-    String url = String(APPS_SCRIPT_URL) + "?smoke=" + String(ppmValue);
+    // สร้าง URL ให้ถูกต้อง โดยมีการส่งค่าเป็น parameter โดยไม่ใช้ String เพื่อหลีกเลี่ยงการจองหน่วยความจำแบบไดนามิก
+    char url[128];
+    snprintf(url, sizeof(url), "%s?smoke=%.2f", APPS_SCRIPT_URL, ppmValue);
 
-    Serial.println("Sending data to Google Script: " + url);
+    Serial.print("Sending data to Google Script: ");
+    Serial.println(url);
 
-    http.begin(url.c_str());
+    http.begin(url);
     http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
     int httpCode = http.GET();
 
@@ -164,17 +173,22 @@ void triggerTwilioCall() {
     return;
   }
 
-  WiFiClientSecure client;
+  static WiFiClientSecure client;
+  static HTTPClient http;
   client.setInsecure(); // ใช้สำหรับ Test เท่านั้น, สำหรับ Production ควรใช้ Certificate
 
-  HTTPClient http;
+  char path[128];
+  snprintf(path, sizeof(path), "/2010-04-01/Accounts/%s/Calls.json", TWILIO_ACCOUNT_SID);
+  char url[256];
+  snprintf(url, sizeof(url), "https://api.twilio.com%s", path);
 
-  String path = "/2010-04-01/Accounts/" + String(TWILIO_ACCOUNT_SID) + "/Calls.json";
-  String url = "https://api.twilio.com" + path;
-  
   if (http.begin(client, url)) {
     String auth = base64::encode(String(TWILIO_ACCOUNT_SID) + ":" + String(TWILIO_AUTH_TOKEN));
-    String postData = "To=" + urlEncode(String(TO_NUMBER)) + "&From=" + urlEncode(String(TWILIO_NUMBER)) + "&Url=" + urlEncode(String(TWIML_URL));
+    String toEncoded = urlEncode(String(TO_NUMBER));
+    String fromEncoded = urlEncode(String(TWILIO_NUMBER));
+    String twimlEncoded = urlEncode(String(TWIML_URL));
+    char postData[256];
+    snprintf(postData, sizeof(postData), "To=%s&From=%s&Url=%s", toEncoded.c_str(), fromEncoded.c_str(), twimlEncoded.c_str());
 
     http.addHeader("Authorization", "Basic " + auth);
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
